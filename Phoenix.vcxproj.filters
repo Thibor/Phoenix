@@ -18,9 +18,6 @@
     <ClCompile Include="attacks.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="data.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="eval.c">
       <Filter>Source Files</Filter>
     </ClCompile>

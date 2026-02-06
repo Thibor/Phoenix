@@ -120,7 +120,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="attacks.c" />
-    <ClCompile Include="data.c" />
     <ClCompile Include="eval.c" />
     <ClCompile Include="gen.c" />
     <ClCompile Include="legal.c" />
