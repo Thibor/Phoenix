@@ -40,7 +40,7 @@ U64 Random64(void)
 	return next;
 }
 
-U64 Key(POS* p)
+U64 Key(Position* p)
 {
 	int i;
 	U64 key;
@@ -85,7 +85,7 @@ void MoveToStr(int move, char* move_str)
 	}
 }
 
-int StrToMove(POS* p, char* move_str) {
+int StrToMove(Position* p, char* move_str) {
 	int from, to, type;
 	from = Sq(move_str[0] - 'a', move_str[1] - '1');
 	to = Sq(move_str[2] - 'a', move_str[3] - '1');

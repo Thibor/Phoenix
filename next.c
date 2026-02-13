@@ -1,6 +1,6 @@
 #include "main.h"
 
-void InitMoves(POS *p, MOVES *m, int trans_move, int ply)
+void InitMoves(Position *p, MOVES *m, int trans_move, int ply)
 {
   m->p = p;
   m->phase = 0;
@@ -74,7 +74,7 @@ int NextMove(MOVES *m)
   return 0;
 }
 
-void InitCaptures(POS *p, MOVES *m)
+void InitCaptures(Position *p, MOVES *m)
 {
   m->p = p;
   m->last = GenerateCaptures(m->p, m->move);
@@ -132,7 +132,7 @@ int SelectBest(MOVES *m)
   return *m->next++;
 }
 
-int BadCapture(POS *p, int move)
+int BadCapture(Position *p, int move)
 {
   int fsq, tsq;
 
@@ -145,7 +145,7 @@ int BadCapture(POS *p, int move)
   return Swap(p, fsq, tsq) < 0;
 }
 
-int MvvLva(POS *p, int move)
+int MvvLva(Position *p, int move)
 {
   if (p->pc[Tsq(move)] != NO_PC)
     return TpOnSq(p, Tsq(move)) * 6 + 5 - TpOnSq(p, Fsq(move));
@@ -167,7 +167,7 @@ void ClearHist(void)
   }
 }
 
-void Hist(POS *p, int move, int depth, int ply)
+void Hist(Position *p, int move, int depth, int ply)
 {
   if (p->pc[Tsq(move)] != NO_PC || IsProm(move) || MoveType(move) == EP_CAP)
     return;

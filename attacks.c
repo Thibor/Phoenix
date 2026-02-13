@@ -1,6 +1,6 @@
 #include "main.h"
 
-U64 AttacksFrom(POS *p, int sq)
+U64 AttacksFrom(Position *p, int sq)
 {
   switch (TpOnSq(p, sq)) {
   case P:
@@ -19,7 +19,7 @@ U64 AttacksFrom(POS *p, int sq)
   return 0;
 }
 
-U64 AttacksTo(POS *p, int sq)
+U64 AttacksTo(Position *p, int sq)
 {
   return (PcBb(p, WC, P) & p_attacks[BC][sq]) |
          (PcBb(p, BC, P) & p_attacks[WC][sq]) |
@@ -29,7 +29,7 @@ U64 AttacksTo(POS *p, int sq)
          (p->tp_bb[K] & k_attacks[sq]);
 }
 
-int Attacked(POS *p, int sq, int side)
+int Attacked(Position *p, int sq, int side)
 {
   return (PcBb(p, side, P) & p_attacks[Opp(side)][sq]) ||
          (PcBb(p, side, N) & n_attacks[sq]) ||

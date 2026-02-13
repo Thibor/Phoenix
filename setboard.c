@@ -1,6 +1,6 @@
 #include "main.h"
 
-void SetPosition(POS *p, char *epd)
+void SetPosition(Position *p, char *epd)
 {
   int i, j, pc;
   static const char pc_char[12] = "PpNnBbRrQqKk";

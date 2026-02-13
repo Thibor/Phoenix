@@ -2,7 +2,7 @@
 #include <string.h>
 #include "main.h"
 
-void SearchRoot(POS* p, int* pv)
+void SearchRoot(Position* p, int* pv)
 {
 	ClearHist();
 	tt_date = (tt_date + 1) & 255;
@@ -16,7 +16,7 @@ void SearchRoot(POS* p, int* pv)
 	}
 }
 
-int SearchAlpha(POS* p, int ply, int alpha, int beta, int depth, int* pv)
+int SearchAlpha(Position* p, int ply, int alpha, int beta, int depth, int* pv)
 {
 	int best, score, move, new_depth, new_pv[MAX_PLY];
 	MOVES m[1];
@@ -84,7 +84,7 @@ int SearchAlpha(POS* p, int ply, int alpha, int beta, int depth, int* pv)
 	return best;
 }
 
-int SearchQuiesce(POS* p, int ply, int alpha, int beta, int* pv)
+int SearchQuiesce(Position* p, int ply, int alpha, int beta, int* pv)
 {
 	int best, score, move, new_pv[MAX_PLY];
 	MOVES m[1];
@@ -122,7 +122,7 @@ int SearchQuiesce(POS* p, int ply, int alpha, int beta, int* pv)
 	return best;
 }
 
-int Repetition(POS* p)
+int Repetition(Position* p)
 {
 	int i;
 

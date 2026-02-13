@@ -1,6 +1,6 @@
 #include "main.h"
 
-int Swap(POS *p, int from, int to)
+int Swap(Position *p, int from, int to)
 {
   int side, ply, type, score[32];
   U64 attackers, occ, type_bb;

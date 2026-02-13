@@ -1,10 +1,8 @@
 #include <stdlib.h>
 #include "main.h"
 
-void AllocTrans(int mbsize)
-{
-  for (tt_size = 2; tt_size <= mbsize; tt_size *= 2)
-    ;
+void AllocTrans(int mbsize){
+  for (tt_size = 2; tt_size <= mbsize; tt_size *= 2);
   tt_size = ((tt_size / 2) << 20) / sizeof(ENTRY);
   tt_mask = tt_size - 4;
   free(tt);
@@ -12,10 +10,8 @@ void AllocTrans(int mbsize)
   ClearTrans();
 }
 
-void ClearTrans(void)
-{
+void ClearTrans(void){
   ENTRY *entry;
-
   tt_date = 0;
   for (entry = tt; entry < tt + tt_size; entry++) {
     entry->key = 0;

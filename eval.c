@@ -1,6 +1,6 @@
 #include "main.h"
 
-int Mobility(POS *p, int side)
+int Mobility(Position *p, int side)
 {
   U64 pieces;
   int from, mob;
@@ -27,7 +27,7 @@ int Mobility(POS *p, int side)
   return mob;
 }
 
-int EvaluatePawns(POS *p, int side)
+int EvaluatePawns(Position *p, int side)
 {
   U64 pieces;
   int from, score;
@@ -45,14 +45,14 @@ int EvaluatePawns(POS *p, int side)
   return score;
 }
 
-int EvaluateKing(POS *p, int side)
+int EvaluateKing(Position *p, int side)
 {
   if (!PcBb(p, Opp(side), Q) || p->mat[Opp(side)] <= 1600)
     return 0;
   return -2 * pst[K][KingSq(p, side)];
 }
 
-int Evaluate(POS *p)
+int Evaluate(Position *p)
 {
   int score;
 

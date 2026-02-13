@@ -1,6 +1,6 @@
 #include "main.h"
 
-void UndoMove(POS *p, int move, UNDO *u)
+void UndoMove(Position *p, int move, UNDO *u)
 {
   int side, fsq, tsq, ftp, ttp;
 
@@ -66,7 +66,7 @@ void UndoMove(POS *p, int move, UNDO *u)
   p->side ^= 1;
 }
 
-void UndoNull(POS *p, UNDO *u)
+void UndoNull(Position *p, UNDO *u)
 {
   p->ep_sq = u->ep_sq;
   p->key = u->key;

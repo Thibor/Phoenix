@@ -1,6 +1,6 @@
 #include "main.h"
 
-int Legal(POS *p, int move)
+int Legal(Position *p, int move)
 {
   int side, fsq, tsq, ftp, ttp;
 

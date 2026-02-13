@@ -43,118 +43,118 @@ SearchInfo info;
 
 void Init(void)
 {
-    int i, j, k, l, x, y;
-    static const int dirs[4][2] = { {1, -1}, {16, -16}, {17, -17}, {15, -15} };
-    static const int p_moves[2][2] = { {15, 17}, {-17, -15} };
-    static const int n_moves[8] = { -33, -31, -18, -14, 14, 18, 31, 33 };
-    static const int k_moves[8] = { -17, -16, -15, -1, 1, 15, 16, 17 };
-    static const int line[8] = { 0, 2, 4, 5, 5, 4, 2, 0 };
+	int i, j, k, l, x, y;
+	static const int dirs[4][2] = { {1, -1}, {16, -16}, {17, -17}, {15, -15} };
+	static const int p_moves[2][2] = { {15, 17}, {-17, -15} };
+	static const int n_moves[8] = { -33, -31, -18, -14, 14, 18, 31, 33 };
+	static const int k_moves[8] = { -17, -16, -15, -1, 1, 15, 16, 17 };
+	static const int line[8] = { 0, 2, 4, 5, 5, 4, 2, 0 };
 
-    for (i = 0; i < 64; i++) {
-        line_mask[0][i] = RANK_1_BB << (i & 070);
-        line_mask[1][i] = FILE_A_BB << (i & 007);
-        j = File(i) - Rank(i);
-        if (j > 0)
-            line_mask[2][i] = DIAG_A1H8_BB >> (j * 8);
-        else
-            line_mask[2][i] = DIAG_A1H8_BB << (-j * 8);
-        j = File(i) - (RANK_8 - Rank(i));
-        if (j > 0)
-            line_mask[3][i] = DIAG_A8H1_BB << (j * 8);
-        else
-            line_mask[3][i] = DIAG_A8H1_BB >> (-j * 8);
-    }
-    for (i = 0; i < 4; i++)
-        for (j = 0; j < 64; j++)
-            for (k = 0; k < 64; k++) {
-                attacks[i][j][k] = 0;
-                for (l = 0; l < 2; l++) {
-                    x = Map0x88(j) + dirs[i][l];
-                    while (!Sq0x88Off(x)) {
-                        y = Unmap0x88(x);
-                        attacks[i][j][k] |= SqBb(y);
-                        if ((k << 1) & (1 << (i != 1 ? File(y) : Rank(y))))
-                            break;
-                        x += dirs[i][l];
-                    }
-                }
-            }
-    for (i = 0; i < 2; i++)
-        for (j = 0; j < 64; j++) {
-            p_attacks[i][j] = 0;
-            for (k = 0; k < 2; k++) {
-                x = Map0x88(j) + p_moves[i][k];
-                if (!Sq0x88Off(x))
-                    p_attacks[i][j] |= SqBb(Unmap0x88(x));
-            }
-        }
-    for (i = 0; i < 64; i++) {
-        n_attacks[i] = 0;
-        for (j = 0; j < 8; j++) {
-            x = Map0x88(i) + n_moves[j];
-            if (!Sq0x88Off(x))
-                n_attacks[i] |= SqBb(Unmap0x88(x));
-        }
-    }
-    for (i = 0; i < 64; i++) {
-        k_attacks[i] = 0;
-        for (j = 0; j < 8; j++) {
-            x = Map0x88(i) + k_moves[j];
-            if (!Sq0x88Off(x))
-                k_attacks[i] |= SqBb(Unmap0x88(x));
-        }
-    }
-    for (i = 0; i < 64; i++) {
-        passed_mask[WC][i] = 0;
-        for (j = File(i) - 1; j <= File(i) + 1; j++) {
-            if ((File(i) == FILE_A && j == -1) ||
-                (File(i) == FILE_H && j == 8))
-                continue;
-            for (k = Rank(i) + 1; k <= RANK_8; k++)
-                passed_mask[WC][i] |= SqBb(Sq(j, k));
-        }
-    }
-    for (i = 0; i < 64; i++) {
-        passed_mask[BC][i] = 0;
-        for (j = File(i) - 1; j <= File(i) + 1; j++) {
-            if ((File(i) == FILE_A && j == -1) ||
-                (File(i) == FILE_H && j == 8))
-                continue;
-            for (k = Rank(i) - 1; k >= RANK_1; k--)
-                passed_mask[BC][i] |= SqBb(Sq(j, k));
-        }
-    }
-    for (i = 0; i < 8; i++) {
-        adjacent_mask[i] = 0;
-        if (i > 0)
-            adjacent_mask[i] |= FILE_A_BB << (i - 1);
-        if (i < 7)
-            adjacent_mask[i] |= FILE_A_BB << (i + 1);
-    }
-    for (i = 0; i < 64; i++) {
-        j = line[File(i)] + line[Rank(i)];
-        pst[P][i] = j * 2;
-        pst[N][i] = j * 4;
-        pst[B][i] = j * 2;
-        pst[R][i] = line[File(i)];
-        pst[Q][i] = j;
-        pst[K][i] = j * 6;
-    }
-    for (i = 0; i < 64; i++)
-        c_mask[i] = 15;
-    c_mask[A1] = 13;
-    c_mask[E1] = 12;
-    c_mask[H1] = 14;
-    c_mask[A8] = 7;
-    c_mask[E8] = 3;
-    c_mask[H8] = 11;
-    for (i = 0; i < 12; i++)
-        for (j = 0; j < 64; j++)
-            zob_piece[i][j] = Random64();
-    for (i = 0; i < 16; i++)
-        zob_castle[i] = Random64();
-    for (i = 0; i < 8; i++)
-        zob_ep[i] = Random64();
+	for (i = 0; i < 64; i++) {
+		line_mask[0][i] = RANK_1_BB << (i & 070);
+		line_mask[1][i] = FILE_A_BB << (i & 007);
+		j = File(i) - Rank(i);
+		if (j > 0)
+			line_mask[2][i] = DIAG_A1H8_BB >> (j * 8);
+		else
+			line_mask[2][i] = DIAG_A1H8_BB << (-j * 8);
+		j = File(i) - (RANK_8 - Rank(i));
+		if (j > 0)
+			line_mask[3][i] = DIAG_A8H1_BB << (j * 8);
+		else
+			line_mask[3][i] = DIAG_A8H1_BB >> (-j * 8);
+	}
+	for (i = 0; i < 4; i++)
+		for (j = 0; j < 64; j++)
+			for (k = 0; k < 64; k++) {
+				attacks[i][j][k] = 0;
+				for (l = 0; l < 2; l++) {
+					x = Map0x88(j) + dirs[i][l];
+					while (!Sq0x88Off(x)) {
+						y = Unmap0x88(x);
+						attacks[i][j][k] |= SqBb(y);
+						if ((k << 1) & (1 << (i != 1 ? File(y) : Rank(y))))
+							break;
+						x += dirs[i][l];
+					}
+				}
+			}
+	for (i = 0; i < 2; i++)
+		for (j = 0; j < 64; j++) {
+			p_attacks[i][j] = 0;
+			for (k = 0; k < 2; k++) {
+				x = Map0x88(j) + p_moves[i][k];
+				if (!Sq0x88Off(x))
+					p_attacks[i][j] |= SqBb(Unmap0x88(x));
+			}
+		}
+	for (i = 0; i < 64; i++) {
+		n_attacks[i] = 0;
+		for (j = 0; j < 8; j++) {
+			x = Map0x88(i) + n_moves[j];
+			if (!Sq0x88Off(x))
+				n_attacks[i] |= SqBb(Unmap0x88(x));
+		}
+	}
+	for (i = 0; i < 64; i++) {
+		k_attacks[i] = 0;
+		for (j = 0; j < 8; j++) {
+			x = Map0x88(i) + k_moves[j];
+			if (!Sq0x88Off(x))
+				k_attacks[i] |= SqBb(Unmap0x88(x));
+		}
+	}
+	for (i = 0; i < 64; i++) {
+		passed_mask[WC][i] = 0;
+		for (j = File(i) - 1; j <= File(i) + 1; j++) {
+			if ((File(i) == FILE_A && j == -1) ||
+				(File(i) == FILE_H && j == 8))
+				continue;
+			for (k = Rank(i) + 1; k <= RANK_8; k++)
+				passed_mask[WC][i] |= SqBb(Sq(j, k));
+		}
+	}
+	for (i = 0; i < 64; i++) {
+		passed_mask[BC][i] = 0;
+		for (j = File(i) - 1; j <= File(i) + 1; j++) {
+			if ((File(i) == FILE_A && j == -1) ||
+				(File(i) == FILE_H && j == 8))
+				continue;
+			for (k = Rank(i) - 1; k >= RANK_1; k--)
+				passed_mask[BC][i] |= SqBb(Sq(j, k));
+		}
+	}
+	for (i = 0; i < 8; i++) {
+		adjacent_mask[i] = 0;
+		if (i > 0)
+			adjacent_mask[i] |= FILE_A_BB << (i - 1);
+		if (i < 7)
+			adjacent_mask[i] |= FILE_A_BB << (i + 1);
+	}
+	for (i = 0; i < 64; i++) {
+		j = line[File(i)] + line[Rank(i)];
+		pst[P][i] = j * 2;
+		pst[N][i] = j * 4;
+		pst[B][i] = j * 2;
+		pst[R][i] = line[File(i)];
+		pst[Q][i] = j;
+		pst[K][i] = j * 6;
+	}
+	for (i = 0; i < 64; i++)
+		c_mask[i] = 15;
+	c_mask[A1] = 13;
+	c_mask[E1] = 12;
+	c_mask[H1] = 14;
+	c_mask[A8] = 7;
+	c_mask[E8] = 3;
+	c_mask[H8] = 11;
+	for (i = 0; i < 12; i++)
+		for (j = 0; j < 64; j++)
+			zob_piece[i][j] = Random64();
+	for (i = 0; i < 16; i++)
+		zob_castle[i] = Random64();
+	for (i = 0; i < 8; i++)
+		zob_ep[i] = Random64();
 }
 
 void ReadLine(char* str, int n)
@@ -177,7 +177,7 @@ char* ParseToken(char* string, char* token)
 	return string;
 }
 
-static void PrintBoard(POS* p) {
+static void PrintBoard(Position* p) {
 	const char* s = "   +---+---+---+---+---+---+---+---+\n";
 	const char* t = "     A   B   C   D   E   F   G   H\n";
 	printf(t);
@@ -197,44 +197,6 @@ static void PrintBoard(POS* p) {
 
 void PrintWelcome() {
 	printf("%s %s\n", NAME, VERSION);
-}
-
-void UciLoop(void) {
-	char command[4096], token[80], * ptr;
-	POS p[1];
-	setbuf(stdin, NULL);
-	setbuf(stdout, NULL);
-	SetPosition(p, START_FEN);
-	AllocTrans(16);
-	PrintWelcome();
-	while (1) {
-		ReadLine(command, sizeof(command));
-		ptr = ParseToken(command, token);
-		if (strcmp(token, "uci") == 0) {
-			printf("id name %s\n", NAME);
-			printf("option name Hash type spin default 16 min 1 max 4096\n");
-			printf("option name Clear Hash type button\n");
-			printf("uciok\n");
-		}
-		else if (strcmp(token, "isready") == 0) {
-			printf("readyok\n");
-		}
-		else if (strcmp(token, "setoption") == 0) {
-			ParseSetoption(ptr);
-		}
-		else if (strcmp(token, "position") == 0) {
-			ParsePosition(p, ptr);
-		}
-		else if (strcmp(token, "go") == 0) {
-			ParseGo(p, ptr);
-		}
-		else if (strcmp(token, "print") == 0) {
-			PrintBoard(p);
-		}
-		else if (strcmp(token, "quit") == 0) {
-			exit(0);
-		}
-	}
 }
 
 void ParseSetoption(char* ptr) {
@@ -270,7 +232,7 @@ void ParseSetoption(char* ptr) {
 	}
 }
 
-void ParsePosition(POS* p, char* ptr) {
+void ParsePosition(Position* p, char* ptr) {
 	char token[80], fen[80];
 	UNDO u[1];
 
@@ -301,7 +263,7 @@ void ParsePosition(POS* p, char* ptr) {
 		}
 }
 
-void ParseGo(POS* pos, char* ptr) {
+void ParseGo(Position* pos, char* ptr) {
 	char token[80], bestmove_str[6], ponder_str[6];
 	int wtime, btime, winc, binc, movestogo, time, inc, pv[MAX_PLY];
 	int movetime, movedepth, nodes;
@@ -388,9 +350,50 @@ void ParseGo(POS* pos, char* ptr) {
 		printf("bestmove %s\n", bestmove_str);
 }
 
-int main()
-{
-  Init();
-  UciLoop();
-  return 0;
+void UciCommand(Position* p, char* command) {
+	char token[80], * ptr;
+	ptr = ParseToken(command, token);
+	if (strncmp(token, "ucinewgame", 10) == 0) {}
+	else if (strncmp(token, "uci",3) == 0) {
+		printf("id name %s\n", NAME);
+		printf("option name Hash type spin default 16 min 1 max 4096\n");
+		printf("option name Clear Hash type button\n");
+		printf("uciok\n");
+	}
+	else if (strncmp(token, "isready",7) == 0) {
+		printf("readyok\n");
+	}
+	else if (strncmp(token, "setoption",9) == 0) {
+		ParseSetoption(ptr);
+	}
+	else if (strncmp(token, "position",8) == 0) {
+		ParsePosition(p, ptr);
+	}
+	else if (strncmp(token, "go",2) == 0) {
+		ParseGo(p, ptr);
+	}
+	else if (strncmp(token, "print",5) == 0) {
+		PrintBoard(p);
+	}
+	else if (strncmp(token, "quit",4) == 0) {
+		exit(0);
+	}
+}
+
+void UciLoop(Position* pos) {
+	char line[4000];
+	while (fgets(line, sizeof(line), stdin))
+		UciCommand(pos,line);
+}
+
+int main() {
+	Position pos;
+	setbuf(stdin, NULL);
+	setbuf(stdout, NULL);
+	SetPosition(&pos, START_FEN);
+	AllocTrans(16);
+	PrintWelcome();
+	Init();
+	UciLoop(&pos);
+	return 0;
 }

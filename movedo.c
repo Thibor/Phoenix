@@ -1,6 +1,6 @@
 #include "main.h"
 
-void DoMove(POS *p, int move, UNDO *u)
+void DoMove(Position *p, int move, UNDO *u)
 {
   int side, fsq, tsq, ftp, ttp;
 
@@ -89,7 +89,7 @@ void DoMove(POS *p, int move, UNDO *u)
   p->key ^= SIDE_RANDOM;
 }
 
-void DoNull(POS *p, UNDO *u)
+void DoNull(Position *p, UNDO *u)
 {
   u->ep_sq = p->ep_sq;
   u->key = p->key;
