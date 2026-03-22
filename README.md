@@ -13,3 +13,7 @@
     <img src="https://img.shields.io/github/v/release/Thibor/Phoenix?color=blue&label=Latest%20release&style=for-the-badge">
     <img src="https://img.shields.io/github/last-commit/Thibor/Phoenix?color=critical&style=for-the-badge">
 </div>
+
+## Features
+
+- board: bitboard + piece[64]

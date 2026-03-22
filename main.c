@@ -29,6 +29,10 @@ const int passed_bonus[2][8] = {
 const int tp_value[7] = {
   100, 325, 325, 500, 1000, 0, 0
 };
+
+int hash_min = 1;
+int hash_def = 64;
+int hash_max = 1000;
 int history[12][64];
 int killer[MAX_PLY][2];
 U64 zob_piece[12][64];
@@ -157,18 +161,50 @@ void Init(void)
 		zob_ep[i] = Random64();
 }
 
-void ReadLine(char* str, int n)
-{
-	char* ptr;
+int Swap(Position* p, int from, int to){
+	int side, ply, type, score[32];
+	U64 attackers, occ, type_bb;
 
+	attackers = AttacksTo(p, to);
+	occ = OccBb(p);
+	score[0] = tp_value[TpOnSq(p, to)];
+	type = TpOnSq(p, from);
+	occ ^= SqBb(from);
+	attackers |= (BAttacks(occ, to) & (p->tp_bb[B] | p->tp_bb[Q])) |
+		(RAttacks(occ, to) & (p->tp_bb[R] | p->tp_bb[Q]));
+	attackers &= occ;
+	side = Opp(p->side);
+	ply = 1;
+	while (attackers & p->cl_bb[side]) {
+		if (type == K) {
+			score[ply++] = INF;
+			break;
+		}
+		score[ply] = -score[ply - 1] + tp_value[type];
+		for (type = P; type <= K; type++)
+			if ((type_bb = PcBb(p, side, type) & attackers))
+				break;
+		occ ^= type_bb & -type_bb;
+		attackers |= (BAttacks(occ, to) & (p->tp_bb[B] | p->tp_bb[Q])) |
+			(RAttacks(occ, to) & (p->tp_bb[R] | p->tp_bb[Q]));
+		attackers &= occ;
+		side ^= 1;
+		ply++;
+	}
+	while (--ply)
+		score[ply - 1] = -Max(-score[ply - 1], score[ply]);
+	return score[0];
+}
+
+void ReadLine(char* str, int n){
+	char* ptr;
 	if (fgets(str, n, stdin) == NULL)
 		exit(0);
 	if ((ptr = strchr(str, '\n')) != NULL)
 		*ptr = '\0';
 }
 
-char* ParseToken(char* string, char* token)
-{
+char* ParseToken(char* string, char* token){
 	while (*string == ' ')
 		string++;
 	while (*string != ' ' && *string != '\0')
@@ -232,10 +268,10 @@ void ParseSetoption(char* ptr) {
 	}
 }
 
-void ParsePosition(Position* p, char* ptr) {
+void ParsePosition(Position* pos, char* ptr) {
 	char token[80], fen[80];
 	UNDO u[1];
-
+	ptr += 9;
 	ptr = ParseToken(ptr, token);
 	if (strcmp(token, "fen") == 0) {
 		fen[0] = '\0';
@@ -246,25 +282,25 @@ void ParsePosition(Position* p, char* ptr) {
 			strcat(fen, token);
 			strcat(fen, " ");
 		}
-		SetPosition(p, fen);
+		SetPosition(pos, fen);
 	}
 	else {
 		ptr = ParseToken(ptr, token);
-		SetPosition(p, START_FEN);
+		SetPosition(pos, START_FEN);
 	}
 	if (strcmp(token, "moves") == 0)
 		for (;;) {
 			ptr = ParseToken(ptr, token);
 			if (*token == '\0')
 				break;
-			DoMove(p, StrToMove(p, token), u);
-			if (p->rev_moves == 0)
-				p->head = 0;
+			DoMove(pos, StrToMove(pos, token), u);
+			if (pos->rev_moves == 0)
+				pos->head = 0;
 		}
 }
 
 void ParseGo(Position* pos, char* ptr) {
-	char token[80], bestmove_str[6], ponder_str[6];
+	char token[80];
 	int wtime, btime, winc, binc, movestogo, time, inc, pv[MAX_PLY];
 	int movetime, movedepth, nodes;
 	info.post = 1;
@@ -341,42 +377,30 @@ void ParseGo(Position* pos, char* ptr) {
 		}
 	}
 	SearchRoot(pos, pv);
-	MoveToStr(pv[0], bestmove_str);
-	if (pv[1]) {
-		MoveToStr(pv[1], ponder_str);
-		printf("bestmove %s ponder %s\n", bestmove_str, ponder_str);
-	}
-	else
-		printf("bestmove %s\n", bestmove_str);
 }
 
-void UciCommand(Position* p, char* command) {
-	char token[80], * ptr;
-	ptr = ParseToken(command, token);
-	if (strncmp(token, "ucinewgame", 10) == 0) {}
-	else if (strncmp(token, "uci",3) == 0) {
+void UciCommand(Position* pos, char* command) {
+	if (strncmp(command, "ucinewgame", 10) == 0) {}
+	else if (strncmp(command, "uci", 3) == 0) {
 		printf("id name %s\n", NAME);
-		printf("option name Hash type spin default 16 min 1 max 4096\n");
-		printf("option name Clear Hash type button\n");
+		printf("option name Hash type spin default %d min %d max %d\n", hash_def, hash_min, hash_max);
 		printf("uciok\n");
 	}
-	else if (strncmp(token, "isready",7) == 0) {
-		printf("readyok\n");
-	}
-	else if (strncmp(token, "setoption",9) == 0) {
-		ParseSetoption(ptr);
-	}
-	else if (strncmp(token, "position",8) == 0) {
-		ParsePosition(p, ptr);
-	}
-	else if (strncmp(token, "go",2) == 0) {
-		ParseGo(p, ptr);
-	}
-	else if (strncmp(token, "print",5) == 0) {
-		PrintBoard(p);
-	}
-	else if (strncmp(token, "quit",4) == 0) {
-		exit(0);
+	else if (strncmp(command, "isready", 7) == 0)printf("readyok\n");
+	else if (strncmp(command, "setoption", 9) == 0)ParseSetoption(command);
+	else if (strncmp(command, "position", 8) == 0)ParsePosition(pos, command);
+	else if (strncmp(command, "go", 2) == 0)ParseGo(pos, command);
+	else if (strncmp(command, "print", 5) == 0)PrintBoard(pos);
+	else if (strncmp(command, "quit", 4) == 0)exit(0);
+	else if (strncmp(command, "stop",4) == 0)info.stop = 1;
+	else if (strncmp(command, "ponderhit",9) == 0)info.ponder = 0;
+	else if (!strncmp(command, "setoption name Hash value ", 26)) {
+		int mb = hash_def;
+		if (sscanf(command, "%*s %*s %*s %*s %d", &mb)) {
+			if (mb < hash_min) mb = hash_min;
+			if (mb > hash_max) mb = hash_max;
+			AllocTrans(mb);
+		}
 	}
 }
 
@@ -391,7 +415,7 @@ int main() {
 	setbuf(stdin, NULL);
 	setbuf(stdout, NULL);
 	SetPosition(&pos, START_FEN);
-	AllocTrans(16);
+	AllocTrans(hash_def);
 	PrintWelcome();
 	Init();
 	UciLoop(&pos);

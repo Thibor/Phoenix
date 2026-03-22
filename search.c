@@ -2,30 +2,50 @@
 #include <string.h>
 #include "main.h"
 
-void SearchRoot(Position* p, int* pv)
-{
-	ClearHist();
-	tt_date = (tt_date + 1) & 255;
-	info.nodes = 0;
-	info.stop = 0;
-	info.timeStart = GetTimeMs();
-	for (int root_depth = 1; root_depth <= info.depthLimit; root_depth++) {
-		SearchAlpha(p, 0, -INF, INF, root_depth, pv);
-		if (info.stop)
-			break;
-	}
-}
-
-int SearchAlpha(Position* p, int ply, int alpha, int beta, int depth, int* pv)
-{
-	int best, score, move, new_depth, new_pv[MAX_PLY];
+int SearchQuiesce(Position* p, int ply, int alpha, int beta, int* pv){
+	int best, score, move, new_pv[MAX_PLY];
 	MOVES m[1];
 	UNDO u[1];
+	if (CheckUp(p))
+		return 0;
+	*pv = 0;
+	if (Repetition(p))
+		return 0;
+	if (ply >= MAX_PLY - 1)
+		return Evaluate(p);
+	best = Evaluate(p);
+	if (best >= beta)
+		return best;
+	if (alpha < best)
+		alpha = best;
+	InitCaptures(p, m);
+	while ((move = NextCapture(m))) {
+		DoMove(p, move, u);
+		if (Illegal(p)) { UndoMove(p, move, u); continue; }
+		score = -SearchQuiesce(p, ply + 1, -beta, -alpha, new_pv);
+		UndoMove(p, move, u);
+		if (info.stop) return 0;
+		if (best < score) {
+			best = score;
+			if (alpha < score) {
+				alpha = score;
+				if (alpha >= beta)
+					return beta;
+				BuildPv(pv, new_pv, move);
+			}
+		}
+	}
+	return best;
+}
 
-	if (depth <= 0)
+int SearchAlpha(Position* p, int ply, int alpha, int beta, int depth, int* pv){
+	int score, move, new_depth, new_pv[MAX_PLY];
+	MOVES m[1];
+	UNDO u[1];
+	if (depth < 1)
 		return SearchQuiesce(p, ply, alpha, beta, pv);
-	CheckUp();
-	if (info.stop) return 0;
+	if (CheckUp(p))
+		return 0;
 	if (ply) *pv = 0;
 	if (Repetition(p) && ply)
 		return 0;
@@ -44,7 +64,7 @@ int SearchAlpha(Position* p, int ply, int alpha, int beta, int depth, int* pv)
 			return score;
 		}
 	}
-	best = -INF;
+	int best = -INF;
 	InitMoves(p, m, move, ply);
 	while ((move = NextMove(m))) {
 		DoMove(p, move, u);
@@ -84,58 +104,37 @@ int SearchAlpha(Position* p, int ply, int alpha, int beta, int depth, int* pv)
 	return best;
 }
 
-int SearchQuiesce(Position* p, int ply, int alpha, int beta, int* pv)
-{
-	int best, score, move, new_pv[MAX_PLY];
-	MOVES m[1];
-	UNDO u[1];
-
-	CheckUp();
-	if (info.stop) return 0;
-	*pv = 0;
-	if (Repetition(p))
-		return 0;
-	if (ply >= MAX_PLY - 1)
-		return Evaluate(p);
-	best = Evaluate(p);
-	if (best >= beta)
-		return best;
-	if (best > alpha)
-		alpha = best;
-	InitCaptures(p, m);
-	while ((move = NextCapture(m))) {
-		DoMove(p, move, u);
-		if (Illegal(p)) { UndoMove(p, move, u); continue; }
-		score = -SearchQuiesce(p, ply + 1, -beta, -alpha, new_pv);
-		UndoMove(p, move, u);
-		if (info.stop) return 0;
-		if (score >= beta)
-			return score;
-		if (score > best) {
-			best = score;
-			if (score > alpha) {
-				alpha = score;
-				BuildPv(pv, new_pv, move);
-			}
-		}
+void SearchRoot(Position* p, int* pv){
+	ClearHist();
+	tt_date = (tt_date + 1) & 255;
+	info.nodes = 0;
+	info.stop = 0;
+	info.timeStart = GetTimeMs();
+	for (int root_depth = 1; root_depth <= info.depthLimit; root_depth++) {
+		SearchAlpha(p, 0, -INF, INF, root_depth, pv);
+		if (info.stop)
+			break;
 	}
-	return best;
+	char best_str[6];
+	char ponder_str[6];
+	MoveToStr(pv[0], best_str);
+	if (pv[1]) {
+		MoveToStr(pv[1], ponder_str);
+		printf("bestmove %s ponder %s\n", best_str, ponder_str);
+	}
+	else
+		printf("bestmove %s\n", best_str);
 }
 
-int Repetition(Position* p)
-{
-	int i;
-
-	for (i = 4; i <= p->rev_moves; i += 2)
+int Repetition(Position* p){
+	for (int i = 4; i <= p->rev_moves; i += 2)
 		if (p->key == p->rep_list[p->head - i])
 			return 1;
 	return 0;
 }
 
-void DisplayPv(int depth,int score, int* pv)
-{
+void DisplayPv(int depth,int score, int* pv){
 	char* type, pv_str[512];
-
 	type = "mate";
 	if (score < -MAX_EVAL)
 		score = (-MATE - score) / 2;
@@ -144,24 +143,20 @@ void DisplayPv(int depth,int score, int* pv)
 	else
 		type = "cp";
 	PvToStr(pv, pv_str);
-	printf("info depth %d time %d nodes %d score %s %d hashfull %d pv %s\n", depth, GetTimeMs() - info.timeStart, info.nodes, type, score, TransPermill(), pv_str);
+	printf("info depth %d time %llu nodes %llu score %s %d hashfull %d pv %s\n", depth, GetTimeMs() - info.timeStart, info.nodes, type, score, TransPermill(), pv_str);
 }
 
-void CheckUp(void)
-{
-	char command[80];
-
-	if (++info.nodes & 0xffff)
-		return;
-	if (InputAvailable()) {
-		ReadLine(command, sizeof(command));
-		if (strcmp(command, "stop") == 0)
+int CheckUp(Position* pos){
+	if ((++info.nodes & 0xffff) == 0) {
+		if (!info.ponder && info.timeLimit && GetTimeMs() - info.timeStart >= info.timeLimit)
 			info.stop = 1;
-		else if (strcmp(command, "ponderhit") == 0)
-			info.ponder = 0;
+		if (!info.ponder && info.nodesLimit && info.nodes >= info.nodesLimit)
+			info.stop = 1;
+		if (InputAvailable()) {
+			char command[80];
+			ReadLine(command, sizeof(command));
+			UciCommand(pos,command);
+		}
 	}
-	if (!info.ponder && info.timeLimit && GetTimeMs() - info.timeStart >= info.timeLimit)
-		info.stop = 1;
-	if (!info.ponder && info.nodesLimit && info.nodes >= info.nodesLimit)
-		info.stop = 1;
+	return info.stop;
 }

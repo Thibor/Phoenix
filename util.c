@@ -28,8 +28,7 @@ int InputAvailable(void)
 	}
 }
 
-int GetTimeMs(void)
-{
+U64 GetTimeMs(void){
 	return GetTickCount64();
 }
 
@@ -70,10 +69,8 @@ int PopCnt(U64 bb)
 	return (bb * k4) >> 56;
 }
 
-void MoveToStr(int move, char* move_str)
-{
+void MoveToStr(int move, char* move_str){
 	static const char prom_char[4] = "nbrq";
-
 	move_str[0] = File(Fsq(move)) + 'a';
 	move_str[1] = Rank(Fsq(move)) + '1';
 	move_str[2] = File(Tsq(move)) + 'a';

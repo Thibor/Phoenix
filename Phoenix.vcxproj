@@ -129,7 +129,6 @@
     <ClCompile Include="next.c" />
     <ClCompile Include="search.c" />
     <ClCompile Include="setboard.c" />
-    <ClCompile Include="swap.c" />
     <ClCompile Include="trans.c" />
     <ClCompile Include="util.c" />
   </ItemGroup>

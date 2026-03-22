@@ -45,9 +45,6 @@
     <ClCompile Include="setboard.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="swap.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="trans.c">
       <Filter>Source Files</Filter>
     </ClCompile>
