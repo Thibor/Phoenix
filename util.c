@@ -51,7 +51,7 @@ U64 Key(Position* p)
 	key ^= zob_castle[p->c_flags];
 	if (p->ep_sq != NO_SQ)
 		key ^= zob_ep[File(p->ep_sq)];
-	if (p->side == BC)
+	if (p->side == BLACK)
 		key ^= SIDE_RANDOM;
 	return key;
 }

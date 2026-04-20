@@ -1,7 +1,7 @@
 #ifndef MAIN_H
 #define MAIN_H
 
-enum {WC, BC, NO_CL};
+enum {WHITE, BLACK, COLOR_NB};
 enum {P, N, B, R, Q, K, NO_TP};
 enum {WP, BP, WN, BN, WB, BB, WR, BR, WQ, BQ, WK, BK, NO_PC};
 enum {FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H};
@@ -84,7 +84,7 @@ enum {
 #define MayNull(p)      (((p)->cl_bb[(p)->side] & ~((p)->tp_bb[P] | (p)->tp_bb[K])) != 0)
 
 #define PcBb(p, x, y)   ((p)->cl_bb[x] & (p)->tp_bb[y])
-#define OccBb(p)        ((p)->cl_bb[WC] | (p)->cl_bb[BC])
+#define OccBb(p)        ((p)->cl_bb[WHITE] | (p)->cl_bb[BLACK])
 #define UnoccBb(p)      (~OccBb(p))
 #define TpOnSq(p, x)    (Tp((p)->pc[x]))
 #define KingSq(p, x)    ((p)->king_sq[x])

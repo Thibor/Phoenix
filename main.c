@@ -109,23 +109,23 @@ void Init(void)
 		}
 	}
 	for (i = 0; i < 64; i++) {
-		passed_mask[WC][i] = 0;
+		passed_mask[WHITE][i] = 0;
 		for (j = File(i) - 1; j <= File(i) + 1; j++) {
 			if ((File(i) == FILE_A && j == -1) ||
 				(File(i) == FILE_H && j == 8))
 				continue;
 			for (k = Rank(i) + 1; k <= RANK_8; k++)
-				passed_mask[WC][i] |= SqBb(Sq(j, k));
+				passed_mask[WHITE][i] |= SqBb(Sq(j, k));
 		}
 	}
 	for (i = 0; i < 64; i++) {
-		passed_mask[BC][i] = 0;
+		passed_mask[BLACK][i] = 0;
 		for (j = File(i) - 1; j <= File(i) + 1; j++) {
 			if ((File(i) == FILE_A && j == -1) ||
 				(File(i) == FILE_H && j == 8))
 				continue;
 			for (k = Rank(i) - 1; k >= RANK_1; k--)
-				passed_mask[BC][i] |= SqBb(Sq(j, k));
+				passed_mask[BLACK][i] |= SqBb(Sq(j, k));
 		}
 	}
 	for (i = 0; i < 8; i++) {
@@ -301,22 +301,21 @@ void ParsePosition(Position* pos, char* ptr) {
 
 void ParseGo(Position* pos, char* ptr) {
 	char token[80];
-	int wtime, btime, winc, binc, movestogo, time, inc, pv[MAX_PLY];
+	int pv[MAX_PLY];
 	int movetime, movedepth, nodes;
+	info.stop = 0;
 	info.post = 1;
-	info.ponder = 0;
 	info.nodes = 0;
+	info.ponder = 0;
 	info.nodesLimit = 0;
 	info.timeLimit = 0;
-	info.depthLimit = 255;
-	info.ponder = 0;
-	wtime = -1;
-	btime = -1;
-	winc = 0;
-	binc = 0;
-	movestogo = 40;
-	movetime = 0;
-	movedepth = 0;
+	info.depthLimit = MAX_PLY;
+	info.timeStart = GetTimeMs();
+	int wtime = 0;
+	int btime = 0;
+	int winc = 0;
+	int binc = 0;
+	int movestogo = 32;
 	for (;;) {
 		ptr = ParseToken(ptr, token);
 		if (*token == '\0')
@@ -346,36 +345,21 @@ void ParseGo(Position* pos, char* ptr) {
 		}
 		else if (strcmp(token, "movetime") == 0) {
 			ptr = ParseToken(ptr, token);
-			movetime = atoi(token);
+			info.timeLimit = atoi(token);
 		}
 		else if (strcmp(token, "depth") == 0) {
 			ptr = ParseToken(ptr, token);
-			movedepth = atoi(token);
+			info.depthLimit = atoi(token);
 		}
 		else if (strcmp(token, "nodes") == 0) {
 			ptr = ParseToken(ptr, token);
-			nodes = atoi(token);
+			info.nodesLimit = atoi(token);
 		}
 	}
-	if (movedepth > 0)
-		info.depthLimit = movedepth;
-	if (nodes > 0)
-		info.nodesLimit = nodes;
-	if (movetime > 0)
-		info.timeLimit = movetime;
-	else {
-		time = pos->side == WC ? wtime : btime;
-		inc = pos->side == WC ? winc : binc;
-		if (time >= 0) {
-			if (movestogo == 1) time -= Min(1000, time / 10);
-			info.timeLimit = (time + inc * (movestogo - 1)) / movestogo;
-			if (info.timeLimit > time)
-				info.timeLimit = time;
-			info.timeLimit -= 10;
-			if (info.timeLimit < 0)
-				info.timeLimit = 0;
-		}
-	}
+	int time = pos->side==WHITE ? wtime : btime;
+	int inc = pos->side==WHITE ? winc : binc;
+	if (time)
+		info.timeLimit = min(time / movestogo + inc, time / 2);
 	SearchRoot(pos, pv);
 }
 

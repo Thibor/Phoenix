@@ -40,9 +40,9 @@ void SetPosition(Position *p, char *epd)
     epd++;
   }
   if (*epd++ == 'w')
-    p->side = WC;
+    p->side = WHITE;
   else
-    p->side = BC;
+    p->side = BLACK;
   epd++;
   if (*epd == '-')
     epd++;

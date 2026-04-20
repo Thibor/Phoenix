@@ -21,8 +21,8 @@ U64 AttacksFrom(Position *p, int sq)
 
 U64 AttacksTo(Position *p, int sq)
 {
-  return (PcBb(p, WC, P) & p_attacks[BC][sq]) |
-         (PcBb(p, BC, P) & p_attacks[WC][sq]) |
+  return (PcBb(p, WHITE, P) & p_attacks[BLACK][sq]) |
+         (PcBb(p, BLACK, P) & p_attacks[WHITE][sq]) |
          (p->tp_bb[N] & n_attacks[sq]) |
          ((p->tp_bb[B] | p->tp_bb[Q]) & BAttacks(OccBb(p), sq)) |
          ((p->tp_bb[R] | p->tp_bb[Q]) & RAttacks(OccBb(p), sq)) |

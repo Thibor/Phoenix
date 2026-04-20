@@ -6,8 +6,8 @@ int* GenerateCaptures(Position* p, int* list)
 	int side, from, to;
 
 	side = p->side;
-	if (side == WC) {
-		moves = ((PcBb(p, WC, P) & ~FILE_A_BB & RANK_7_BB) << 7) & p->cl_bb[BC];
+	if (side == WHITE) {
+		moves = ((PcBb(p, WHITE, P) & ~FILE_A_BB & RANK_7_BB) << 7) & p->cl_bb[BLACK];
 		while (moves) {
 			to = FirstOne(moves);
 			*list++ = (Q_PROM << 12) | (to << 6) | (to - 7);
@@ -16,7 +16,7 @@ int* GenerateCaptures(Position* p, int* list)
 			*list++ = (N_PROM << 12) | (to << 6) | (to - 7);
 			moves &= moves - 1;
 		}
-		moves = ((PcBb(p, WC, P) & ~FILE_H_BB & RANK_7_BB) << 9) & p->cl_bb[BC];
+		moves = ((PcBb(p, WHITE, P) & ~FILE_H_BB & RANK_7_BB) << 9) & p->cl_bb[BLACK];
 		while (moves) {
 			to = FirstOne(moves);
 			*list++ = (Q_PROM << 12) | (to << 6) | (to - 9);
@@ -25,7 +25,7 @@ int* GenerateCaptures(Position* p, int* list)
 			*list++ = (N_PROM << 12) | (to << 6) | (to - 9);
 			moves &= moves - 1;
 		}
-		moves = ((PcBb(p, WC, P) & RANK_7_BB) << 8) & UnoccBb(p);
+		moves = ((PcBb(p, WHITE, P) & RANK_7_BB) << 8) & UnoccBb(p);
 		while (moves) {
 			to = FirstOne(moves);
 			*list++ = (Q_PROM << 12) | (to << 6) | (to - 8);
@@ -34,27 +34,27 @@ int* GenerateCaptures(Position* p, int* list)
 			*list++ = (N_PROM << 12) | (to << 6) | (to - 8);
 			moves &= moves - 1;
 		}
-		moves = ((PcBb(p, WC, P) & ~FILE_A_BB & ~RANK_7_BB) << 7) & p->cl_bb[BC];
+		moves = ((PcBb(p, WHITE, P) & ~FILE_A_BB & ~RANK_7_BB) << 7) & p->cl_bb[BLACK];
 		while (moves) {
 			to = FirstOne(moves);
 			*list++ = (to << 6) | (to - 7);
 			moves &= moves - 1;
 		}
-		moves = ((PcBb(p, WC, P) & ~FILE_H_BB & ~RANK_7_BB) << 9) & p->cl_bb[BC];
+		moves = ((PcBb(p, WHITE, P) & ~FILE_H_BB & ~RANK_7_BB) << 9) & p->cl_bb[BLACK];
 		while (moves) {
 			to = FirstOne(moves);
 			*list++ = (to << 6) | (to - 9);
 			moves &= moves - 1;
 		}
 		if ((to = p->ep_sq) != NO_SQ) {
-			if (((PcBb(p, WC, P) & ~FILE_A_BB) << 7) & SqBb(to))
+			if (((PcBb(p, WHITE, P) & ~FILE_A_BB) << 7) & SqBb(to))
 				*list++ = (EP_CAP << 12) | (to << 6) | (to - 7);
-			if (((PcBb(p, WC, P) & ~FILE_H_BB) << 9) & SqBb(to))
+			if (((PcBb(p, WHITE, P) & ~FILE_H_BB) << 9) & SqBb(to))
 				*list++ = (EP_CAP << 12) | (to << 6) | (to - 9);
 		}
 	}
 	else {
-		moves = ((PcBb(p, BC, P) & ~FILE_A_BB & RANK_2_BB) >> 9) & p->cl_bb[WC];
+		moves = ((PcBb(p, BLACK, P) & ~FILE_A_BB & RANK_2_BB) >> 9) & p->cl_bb[WHITE];
 		while (moves) {
 			to = FirstOne(moves);
 			*list++ = (Q_PROM << 12) | (to << 6) | (to + 9);
@@ -63,7 +63,7 @@ int* GenerateCaptures(Position* p, int* list)
 			*list++ = (N_PROM << 12) | (to << 6) | (to + 9);
 			moves &= moves - 1;
 		}
-		moves = ((PcBb(p, BC, P) & ~FILE_H_BB & RANK_2_BB) >> 7) & p->cl_bb[WC];
+		moves = ((PcBb(p, BLACK, P) & ~FILE_H_BB & RANK_2_BB) >> 7) & p->cl_bb[WHITE];
 		while (moves) {
 			to = FirstOne(moves);
 			*list++ = (Q_PROM << 12) | (to << 6) | (to + 7);
@@ -72,7 +72,7 @@ int* GenerateCaptures(Position* p, int* list)
 			*list++ = (N_PROM << 12) | (to << 6) | (to + 7);
 			moves &= moves - 1;
 		}
-		moves = ((PcBb(p, BC, P) & RANK_2_BB) >> 8) & UnoccBb(p);
+		moves = ((PcBb(p, BLACK, P) & RANK_2_BB) >> 8) & UnoccBb(p);
 		while (moves) {
 			to = FirstOne(moves);
 			*list++ = (Q_PROM << 12) | (to << 6) | (to + 8);
@@ -81,22 +81,22 @@ int* GenerateCaptures(Position* p, int* list)
 			*list++ = (N_PROM << 12) | (to << 6) | (to + 8);
 			moves &= moves - 1;
 		}
-		moves = ((PcBb(p, BC, P) & ~FILE_A_BB & ~RANK_2_BB) >> 9) & p->cl_bb[WC];
+		moves = ((PcBb(p, BLACK, P) & ~FILE_A_BB & ~RANK_2_BB) >> 9) & p->cl_bb[WHITE];
 		while (moves) {
 			to = FirstOne(moves);
 			*list++ = (to << 6) | (to + 9);
 			moves &= moves - 1;
 		}
-		moves = ((PcBb(p, BC, P) & ~FILE_H_BB & ~RANK_2_BB) >> 7) & p->cl_bb[WC];
+		moves = ((PcBb(p, BLACK, P) & ~FILE_H_BB & ~RANK_2_BB) >> 7) & p->cl_bb[WHITE];
 		while (moves) {
 			to = FirstOne(moves);
 			*list++ = (to << 6) | (to + 7);
 			moves &= moves - 1;
 		}
 		if ((to = p->ep_sq) != NO_SQ) {
-			if (((PcBb(p, BC, P) & ~FILE_A_BB) >> 9) & SqBb(to))
+			if (((PcBb(p, BLACK, P) & ~FILE_A_BB) >> 9) & SqBb(to))
 				*list++ = (EP_CAP << 12) | (to << 6) | (to + 9);
-			if (((PcBb(p, BC, P) & ~FILE_H_BB) >> 7) & SqBb(to))
+			if (((PcBb(p, BLACK, P) & ~FILE_H_BB) >> 7) & SqBb(to))
 				*list++ = (EP_CAP << 12) | (to << 6) | (to + 7);
 		}
 	}
@@ -159,20 +159,20 @@ int* GenerateQuiet(Position* p, int* list)
 	int side, from, to;
 
 	side = p->side;
-	if (side == WC) {
+	if (side == WHITE) {
 		if ((p->c_flags & 1) && !(OccBb(p) & (U64)0x0000000000000060))
-			if (!Attacked(p, E1, BC) && !Attacked(p, F1, BC))
+			if (!Attacked(p, E1, BLACK) && !Attacked(p, F1, BLACK))
 				*list++ = (CASTLE << 12) | (G1 << 6) | E1;
 		if ((p->c_flags & 2) && !(OccBb(p) & (U64)0x000000000000000E))
-			if (!Attacked(p, E1, BC) && !Attacked(p, D1, BC))
+			if (!Attacked(p, E1, BLACK) && !Attacked(p, D1, BLACK))
 				*list++ = (CASTLE << 12) | (C1 << 6) | E1;
-		moves = ((((PcBb(p, WC, P) & RANK_2_BB) << 8) & UnoccBb(p)) << 8) & UnoccBb(p);
+		moves = ((((PcBb(p, WHITE, P) & RANK_2_BB) << 8) & UnoccBb(p)) << 8) & UnoccBb(p);
 		while (moves) {
 			to = FirstOne(moves);
 			*list++ = (EP_SET << 12) | (to << 6) | (to - 16);
 			moves &= moves - 1;
 		}
-		moves = ((PcBb(p, WC, P) & ~RANK_7_BB) << 8) & UnoccBb(p);
+		moves = ((PcBb(p, WHITE, P) & ~RANK_7_BB) << 8) & UnoccBb(p);
 		while (moves) {
 			to = FirstOne(moves);
 			*list++ = (to << 6) | (to - 8);
@@ -181,18 +181,18 @@ int* GenerateQuiet(Position* p, int* list)
 	}
 	else {
 		if ((p->c_flags & 4) && !(OccBb(p) & (U64)0x6000000000000000))
-			if (!Attacked(p, E8, WC) && !Attacked(p, F8, WC))
+			if (!Attacked(p, E8, WHITE) && !Attacked(p, F8, WHITE))
 				*list++ = (CASTLE << 12) | (G8 << 6) | E8;
 		if ((p->c_flags & 8) && !(OccBb(p) & (U64)0x0E00000000000000))
-			if (!Attacked(p, E8, WC) && !Attacked(p, D8, WC))
+			if (!Attacked(p, E8, WHITE) && !Attacked(p, D8, WHITE))
 				*list++ = (CASTLE << 12) | (C8 << 6) | E8;
-		moves = ((((PcBb(p, BC, P) & RANK_7_BB) >> 8) & UnoccBb(p)) >> 8) & UnoccBb(p);
+		moves = ((((PcBb(p, BLACK, P) & RANK_7_BB) >> 8) & UnoccBb(p)) >> 8) & UnoccBb(p);
 		while (moves) {
 			to = FirstOne(moves);
 			*list++ = (EP_SET << 12) | (to << 6) | (to + 16);
 			moves &= moves - 1;
 		}
-		moves = ((PcBb(p, BC, P) & ~RANK_2_BB) >> 8) & UnoccBb(p);
+		moves = ((PcBb(p, BLACK, P) & ~RANK_2_BB) >> 8) & UnoccBb(p);
 		while (moves) {
 			to = FirstOne(moves);
 			*list++ = (to << 6) | (to + 8);

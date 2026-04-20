@@ -107,9 +107,6 @@ int SearchAlpha(Position* p, int ply, int alpha, int beta, int depth, int* pv){
 void SearchRoot(Position* p, int* pv){
 	ClearHist();
 	tt_date = (tt_date + 1) & 255;
-	info.nodes = 0;
-	info.stop = 0;
-	info.timeStart = GetTimeMs();
 	for (int root_depth = 1; root_depth <= info.depthLimit; root_depth++) {
 		SearchAlpha(p, 0, -INF, INF, root_depth, pv);
 		if (info.stop)

@@ -17,16 +17,16 @@ int Legal(Position *p, int move)
   case NORMAL:
     break;
   case CASTLE:
-    if (side == WC) {
+    if (side == WHITE) {
       if (fsq != E1)
         return 0;
       if (tsq > fsq) {
         if ((p->c_flags & 1) && !(OccBb(p) & (U64)0x0000000000000060))
-          if (!Attacked(p, E1, BC) && !Attacked(p, F1, BC))
+          if (!Attacked(p, E1, BLACK) && !Attacked(p, F1, BLACK))
             return 1;
       } else {
         if ((p->c_flags & 2) && !(OccBb(p) & (U64)0x000000000000000E))
-          if (!Attacked(p, E1, BC) && !Attacked(p, D1, BC))
+          if (!Attacked(p, E1, BLACK) && !Attacked(p, D1, BLACK))
             return 1;
       }
     } else {
@@ -34,11 +34,11 @@ int Legal(Position *p, int move)
         return 0;
       if (tsq > fsq) {
         if ((p->c_flags & 4) && !(OccBb(p) & (U64)0x6000000000000000))
-          if (!Attacked(p, E8, WC) && !Attacked(p, F8, WC))
+          if (!Attacked(p, E8, WHITE) && !Attacked(p, F8, WHITE))
             return 1;
       } else {
         if ((p->c_flags & 8) && !(OccBb(p) & (U64)0x0E00000000000000))
-          if (!Attacked(p, E8, WC) && !Attacked(p, D8, WC))
+          if (!Attacked(p, E8, WHITE) && !Attacked(p, D8, WHITE))
             return 1;
       }
     }
@@ -49,13 +49,13 @@ int Legal(Position *p, int move)
     return 0;
   case EP_SET:
     if (ftp == P && ttp == NO_TP && p->pc[tsq ^ 8] == NO_PC)
-      if ((tsq > fsq && side == WC) ||
-          (tsq < fsq && side == BC))
+      if ((tsq > fsq && side == WHITE) ||
+          (tsq < fsq && side == BLACK))
         return 1;
     return 0;
   }
   if (ftp == P) {
-    if (side == WC) {
+    if (side == WHITE) {
       if (Rank(fsq) == RANK_7 && !IsProm(move))
         return 0;
       if (tsq - fsq == 8)

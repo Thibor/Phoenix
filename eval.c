@@ -56,15 +56,15 @@ int Evaluate(Position *p)
 {
   int score;
 
-  score = p->mat[WC] - p->mat[BC];
+  score = p->mat[WHITE] - p->mat[BLACK];
   if (score > -200 && score < 200)
-    score += Mobility(p, WC) - Mobility(p, BC);
-  score += p->pst[WC] - p->pst[BC];
-  score += EvaluatePawns(p, WC) - EvaluatePawns(p, BC);
-  score += EvaluateKing(p, WC) - EvaluateKing(p, BC);
+    score += Mobility(p, WHITE) - Mobility(p, BLACK);
+  score += p->pst[WHITE] - p->pst[BLACK];
+  score += EvaluatePawns(p, WHITE) - EvaluatePawns(p, BLACK);
+  score += EvaluateKing(p, WHITE) - EvaluateKing(p, BLACK);
   if (score < -MAX_EVAL)
     score = -MAX_EVAL;
   else if (score > MAX_EVAL)
     score = MAX_EVAL;
-  return p->side == WC ? score : -score;
+  return p->side == WHITE ? score : -score;
 }

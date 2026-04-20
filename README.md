@@ -14,6 +14,13 @@
     <img src="https://img.shields.io/github/last-commit/Thibor/Phoenix?color=critical&style=for-the-badge">
 </div>
 
+FIDE-rules-compliant chess engine
+
 ## Features
 
 - board: bitboard + piece[64]
+- En passant
+- Underpromotions (knight, bishop, rook)
+- Threefold repetition
+- 50-move rule
+- Stalemate and checkmate reported correctly to the GUI
