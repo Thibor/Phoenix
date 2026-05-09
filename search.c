@@ -21,7 +21,10 @@ int SearchQuiesce(Position* p, int ply, int alpha, int beta, int* pv){
 	InitCaptures(p, m);
 	while ((move = NextCapture(m))) {
 		DoMove(p, move, u);
-		if (Illegal(p)) { UndoMove(p, move, u); continue; }
+		if (Illegal(p)) {
+			UndoMove(p, move, u);
+			continue;
+		}
 		score = -SearchQuiesce(p, ply + 1, -beta, -alpha, new_pv);
 		UndoMove(p, move, u);
 		if (info.stop) return 0;
@@ -104,7 +107,8 @@ int SearchAlpha(Position* p, int ply, int alpha, int beta, int depth, int* pv){
 	return best;
 }
 
-void SearchRoot(Position* p, int* pv){
+void SearchRoot(Position* p){
+	int pv[MAX_PLY];
 	ClearHist();
 	tt_date = (tt_date + 1) & 255;
 	for (int root_depth = 1; root_depth <= info.depthLimit; root_depth++) {

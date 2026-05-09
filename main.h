@@ -214,7 +214,6 @@ int SelectBest(MOVES *);
 void SetPosition(Position *, char *);
 int StrToMove(Position *, char *);
 int Swap(Position *, int, int);
-void SearchRoot(Position *, int *);
 int TransPermill();
 int TransRetrieve(U64, int *, int *, int, int, int, int);
 void TransStore(U64, int, int, int, int, int);

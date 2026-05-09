@@ -301,7 +301,6 @@ void ParsePosition(Position* pos, char* ptr) {
 
 void ParseGo(Position* pos, char* ptr) {
 	char token[80];
-	int pv[MAX_PLY];
 	int movetime, movedepth, nodes;
 	info.stop = 0;
 	info.post = 1;
@@ -360,7 +359,7 @@ void ParseGo(Position* pos, char* ptr) {
 	int inc = pos->side==WHITE ? winc : binc;
 	if (time)
 		info.timeLimit = min(time / movestogo + inc, time / 2);
-	SearchRoot(pos, pv);
+	SearchRoot(pos);
 }
 
 void UciCommand(Position* pos, char* command) {
