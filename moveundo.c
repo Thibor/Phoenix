@@ -1,34 +1,32 @@
 #include "main.h"
 
-void UndoMove(Position *p, int move, UNDO *u)
+void UndoMove(Position *pos, int moves, UNDO *u)
 {
   int side, fsq, tsq, ftp, ttp;
 
-  side = Opp(p->side);
-  fsq = Fsq(move);
-  tsq = Tsq(move);
-  ftp = TpOnSq(p, tsq);
+  side = Opp(pos->side);
+  fsq = Fsq(moves);
+  tsq = Tsq(moves);
+  ftp = TpOnSq(pos, tsq);
   ttp = u->ttp;
-  p->c_flags = u->c_flags;
-  p->ep_sq = u->ep_sq;
-  p->rev_moves = u->rev_moves;
-  p->key = u->key;
-  p->head--;
-  p->pc[fsq] = Pc(side, ftp);
-  p->pc[tsq] = NO_PC;
-  p->cl_bb[side] ^= SqBb(fsq) | SqBb(tsq);
-  p->tp_bb[ftp] ^= SqBb(fsq) | SqBb(tsq);
-  p->pst[side] += pst[ftp][fsq] - pst[ftp][tsq];
+  pos->c_flags = u->c_flags;
+  pos->ep_sq = u->ep_sq;
+  pos->rev_moves = u->rev_moves;
+  pos->key = u->key;
+  pos->head--;
+  pos->pc[fsq] = Pc(side, ftp);
+  pos->pc[tsq] = PIECE_NB;
+  pos->cl_bb[side] ^= SqBb(fsq) | SqBb(tsq);
+  pos->tp_bb[ftp] ^= SqBb(fsq) | SqBb(tsq);
   if (ftp == K)
-    p->king_sq[side] = fsq;
-  if (ttp != NO_TP) {
-    p->pc[tsq] = Pc(Opp(side), ttp);
-    p->cl_bb[Opp(side)] ^= SqBb(tsq);
-    p->tp_bb[ttp] ^= SqBb(tsq);
-    p->mat[Opp(side)] += tp_value[ttp];
-    p->pst[Opp(side)] += pst[ttp][tsq];
+    pos->king_sq[side] = fsq;
+  if (ttp != PT_NB) {
+    pos->pc[tsq] = Pc(Opp(side), ttp);
+    pos->cl_bb[Opp(side)] ^= SqBb(tsq);
+    pos->tp_bb[ttp] ^= SqBb(tsq);
+    pos->mat[Opp(side)] += tp_value[ttp];
   }
-  switch (MoveType(move)) {
+  switch (MoveType(moves)) {
   case NORMAL:
     break;
   case CASTLE:
@@ -39,38 +37,35 @@ void UndoMove(Position *p, int move, UNDO *u)
       fsq -= 4;
       tsq += 1;
     }
-    p->pc[tsq] = NO_PC;
-    p->pc[fsq] = Pc(side, R);
-    p->cl_bb[side] ^= SqBb(fsq) | SqBb(tsq);
-    p->tp_bb[R] ^= SqBb(fsq) | SqBb(tsq);
-    p->pst[side] += pst[R][fsq] - pst[R][tsq];
+    pos->pc[tsq] = PIECE_NB;
+    pos->pc[fsq] = Pc(side, R);
+    pos->cl_bb[side] ^= SqBb(fsq) | SqBb(tsq);
+    pos->tp_bb[R] ^= SqBb(fsq) | SqBb(tsq);
     break;
   case EP_CAP:
     tsq ^= 8;
-    p->pc[tsq] = Pc(Opp(side), P);
-    p->cl_bb[Opp(side)] ^= SqBb(tsq);
-    p->tp_bb[P] ^= SqBb(tsq);
-    p->mat[Opp(side)] += tp_value[P];
-    p->pst[Opp(side)] += pst[P][tsq];
+    pos->pc[tsq] = Pc(Opp(side), P);
+    pos->cl_bb[Opp(side)] ^= SqBb(tsq);
+    pos->tp_bb[P] ^= SqBb(tsq);
+    pos->mat[Opp(side)] += tp_value[P];
     break;
   case EP_SET:
     break;
   case N_PROM: case B_PROM: case R_PROM: case Q_PROM:
-    p->pc[fsq] = Pc(side, P);
-    p->tp_bb[P] ^= SqBb(fsq);
-    p->tp_bb[ftp] ^= SqBb(fsq);
-    p->mat[side] += tp_value[P] - tp_value[ftp];
-    p->pst[side] += pst[P][fsq] - pst[ftp][fsq];
+    pos->pc[fsq] = Pc(side, P);
+    pos->tp_bb[P] ^= SqBb(fsq);
+    pos->tp_bb[ftp] ^= SqBb(fsq);
+    pos->mat[side] += tp_value[P] - tp_value[ftp];
     break;
   }
-  p->side ^= 1;
+  pos->side ^= 1;
 }
 
-void UndoNull(Position *p, UNDO *u)
+void UndoNull(Position *pos, UNDO *u)
 {
-  p->ep_sq = u->ep_sq;
-  p->key = u->key;
-  p->head--;
-  p->rev_moves--;
-  p->side ^= 1;
+  pos->ep_sq = u->ep_sq;
+  pos->key = u->key;
+  pos->head--;
+  pos->rev_moves--;
+  pos->side ^= 1;
 }

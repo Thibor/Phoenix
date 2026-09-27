@@ -16,7 +16,7 @@ void ClearTrans(void){
   for (entry = tt; entry < tt + tt_size; entry++) {
     entry->key = 0;
     entry->date = 0;
-    entry->move = 0;
+    entry->moves = 0;
     entry->score = 0;
     entry->flags = 0;
     entry->depth = 0;
@@ -34,7 +34,7 @@ int TransPermill() {
     return pm;
 }
 
-int TransRetrieve(U64 key, int *move, int *score, int alpha, int beta, int depth, int ply)
+int TransRetrieve(U64 key, int *moves, int *score, int alpha, int beta, int depth, int ply)
 {
   ENTRY *entry;
   int i;
@@ -43,7 +43,7 @@ int TransRetrieve(U64 key, int *move, int *score, int alpha, int beta, int depth
   for (i = 0; i < 4; i++) {
     if (entry->key == key) {
       entry->date = tt_date;
-      *move = entry->move;
+      *moves = entry->moves;
       if (entry->depth >= depth) {
         *score = entry->score;
         if (*score < -MAX_EVAL)
@@ -61,7 +61,7 @@ int TransRetrieve(U64 key, int *move, int *score, int alpha, int beta, int depth
   return 0;
 }
 
-void TransStore(U64 key, int move, int score, int flags, int depth, int ply)
+void TransStore(U64 key, int moves, int score, int flags, int depth, int ply)
 {
   ENTRY *entry, *replace;
   int i, oldest, age;
@@ -75,7 +75,7 @@ void TransStore(U64 key, int move, int score, int flags, int depth, int ply)
   entry = tt + (key & tt_mask);
   for (i = 0; i < 4; i++) {
     if (entry->key == key) {
-      if (!move) move = entry->move;
+      if (!moves) moves = entry->moves;
       replace = entry;
       break;
     }
@@ -88,7 +88,7 @@ void TransStore(U64 key, int move, int score, int flags, int depth, int ply)
   }
   replace->key = key;
   replace->date = tt_date; 
-  replace->move = move;
+  replace->moves = moves;
   replace->score = score;
   replace->flags = flags;
   replace->depth = depth;

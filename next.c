@@ -1,8 +1,8 @@
 #include "main.h"
 
-void InitMoves(Position *p, MOVES *m, int trans_move, int ply)
+void InitMoves(Position *pos, MOVES *m, int trans_move, int ply)
 {
-  m->p = p;
+  m->pos = pos;
   m->phase = 0;
   m->trans_move = trans_move;
   m->killer1 = killer[ply][0];
@@ -11,59 +11,59 @@ void InitMoves(Position *p, MOVES *m, int trans_move, int ply)
 
 int NextMove(MOVES *m)
 {
-  int move;
+  int moves;
 
   switch (m->phase) {
   case 0:
-    move = m->trans_move;
-    if (move && Legal(m->p, move)) {
+    moves = m->trans_move;
+    if (moves && Legal(m->pos, moves)) {
       m->phase = 1;
-      return move;
+      return moves;
     }
   case 1:
-    m->last = GenerateCaptures(m->p, m->move);
+    m->last = GenerateCaptures(m->pos, m->moves);
     ScoreCaptures(m);
-    m->next = m->move;
+    m->next = m->moves;
     m->badp = m->bad;
     m->phase = 2;
   case 2:
     while (m->next < m->last) {
-      move = SelectBest(m);
-      if (move == m->trans_move)
+      moves = SelectBest(m);
+      if (moves == m->trans_move)
         continue;
-      if (BadCapture(m->p, move)) {
-        *m->badp++ = move;
+      if (BadCapture(m->pos, moves)) {
+        *m->badp++ = moves;
         continue;
       }
-      return move;
+      return moves;
     }
   case 3:
-    move = m->killer1;
-    if (move && move != m->trans_move &&
-        m->p->pc[Tsq(move)] == NO_PC && Legal(m->p, move)) {
+    moves = m->killer1;
+    if (moves && moves != m->trans_move &&
+        m->pos->pc[Tsq(moves)] == PIECE_NB && Legal(m->pos, moves)) {
       m->phase = 4;
-      return move;
+      return moves;
     }
   case 4:
-    move = m->killer2;
-    if (move && move != m->trans_move &&
-        m->p->pc[Tsq(move)] == NO_PC && Legal(m->p, move)) {
+    moves = m->killer2;
+    if (moves && moves != m->trans_move &&
+        m->pos->pc[Tsq(moves)] == PIECE_NB && Legal(m->pos, moves)) {
       m->phase = 5;
-      return move;
+      return moves;
     }
   case 5:
-    m->last = GenerateQuiet(m->p, m->move);
+    m->last = GenerateQuiet(m->pos, m->moves);
     ScoreQuiet(m);
-    m->next = m->move;
+    m->next = m->moves;
     m->phase = 6;
   case 6:
     while (m->next < m->last) {
-      move = SelectBest(m);
-      if (move == m->trans_move ||
-          move == m->killer1 ||
-          move == m->killer2)
+      moves = SelectBest(m);
+      if (moves == m->trans_move ||
+          moves == m->killer1 ||
+          moves == m->killer2)
         continue;
-      return move;
+      return moves;
     }
     m->next = m->bad;
     m->phase = 7;
@@ -74,23 +74,23 @@ int NextMove(MOVES *m)
   return 0;
 }
 
-void InitCaptures(Position *p, MOVES *m)
+void InitCaptures(Position *pos, MOVES *m)
 {
-  m->p = p;
-  m->last = GenerateCaptures(m->p, m->move);
+  m->pos = pos;
+  m->last = GenerateCaptures(m->pos, m->moves);
   ScoreCaptures(m);
-  m->next = m->move;
+  m->next = m->moves;
 }
 
 int NextCapture(MOVES *m)
 {
-  int move;
+  int moves;
 
   while (m->next < m->last) {
-    move = SelectBest(m);
-    if (BadCapture(m->p, move))
+    moves = SelectBest(m);
+    if (BadCapture(m->pos, moves))
       continue;
-    return move;
+    return moves;
   }
   return 0;
 }
@@ -100,8 +100,8 @@ void ScoreCaptures(MOVES *m)
   int *movep, *valuep;
 
   valuep = m->value;
-  for (movep = m->move; movep < m->last; movep++)
-    *valuep++ = MvvLva(m->p, *movep);
+  for (movep = m->moves; movep < m->last; movep++)
+    *valuep++ = MvvLva(m->pos, *movep);
 }
 
 void ScoreQuiet(MOVES *m)
@@ -109,15 +109,15 @@ void ScoreQuiet(MOVES *m)
   int *movep, *valuep;
 
   valuep = m->value;
-  for (movep = m->move; movep < m->last; movep++)
-    *valuep++ = history[m->p->pc[Fsq(*movep)]][Tsq(*movep)];
+  for (movep = m->moves; movep < m->last; movep++)
+    *valuep++ = history[m->pos->pc[Fsq(*movep)]][Tsq(*movep)];
 }
 
 int SelectBest(MOVES *m)
 {
   int *movep, *valuep, aux;
 
-  valuep = m->value + (m->last - m->move) - 1;
+  valuep = m->value + (m->last - m->moves) - 1;
   for (movep = m->last - 1; movep > m->next; movep--) {
     if (*valuep > *(valuep - 1)) {
       aux = *valuep;
@@ -132,32 +132,30 @@ int SelectBest(MOVES *m)
   return *m->next++;
 }
 
-int BadCapture(Position *p, int move)
+int BadCapture(Position *pos, int moves)
 {
   int fsq, tsq;
 
-  fsq = Fsq(move);
-  tsq = Tsq(move);
-  if (tp_value[TpOnSq(p, tsq)] >= tp_value[TpOnSq(p, fsq)])
+  fsq = Fsq(moves);
+  tsq = Tsq(moves);
+  if (tp_value[TpOnSq(pos, tsq)] >= tp_value[TpOnSq(pos, fsq)])
     return 0;
-  if (MoveType(move) == EP_CAP)
+  if (MoveType(moves) == EP_CAP)
     return 0;
-  return Swap(p, fsq, tsq) < 0;
+  return Swap(pos, fsq, tsq) < 0;
 }
 
-int MvvLva(Position *p, int move)
+int MvvLva(Position *pos, int moves)
 {
-  if (p->pc[Tsq(move)] != NO_PC)
-    return TpOnSq(p, Tsq(move)) * 6 + 5 - TpOnSq(p, Fsq(move));
-  if (IsProm(move))
-    return PromType(move) - 5;
+  if (pos->pc[Tsq(moves)] != PIECE_NB)
+    return TpOnSq(pos, Tsq(moves)) * 6 + 5 - TpOnSq(pos, Fsq(moves));
+  if (IsProm(moves))
+    return PromType(moves) - 5;
   return 5;
 }
 
-void ClearHist(void)
-{
+void ClearHist(void){
   int i, j;
-
   for (i = 0; i < 12; i++)
     for (j = 0; j < 64; j++)
       history[i][j] = 0;
@@ -167,13 +165,13 @@ void ClearHist(void)
   }
 }
 
-void Hist(Position *p, int move, int depth, int ply)
+void Hist(Position *pos, int moves, int depth, int ply)
 {
-  if (p->pc[Tsq(move)] != NO_PC || IsProm(move) || MoveType(move) == EP_CAP)
+  if (pos->pc[Tsq(moves)] != PIECE_NB || IsProm(moves) || MoveType(moves) == EP_CAP)
     return;
-  history[p->pc[Fsq(move)]][Tsq(move)] += depth;
-  if (move != killer[ply][0]) {
+  history[pos->pc[Fsq(moves)]][Tsq(moves)] += depth;
+  if (moves != killer[ply][0]) {
     killer[ply][1] = killer[ply][0];
-    killer[ply][0] = move;
+    killer[ply][0] = moves;
   }
 }

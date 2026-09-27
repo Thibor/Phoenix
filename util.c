@@ -39,19 +39,19 @@ U64 Random64(void)
 	return next;
 }
 
-U64 Key(Position* p)
+U64 Key(Position* pos)
 {
 	int i;
 	U64 key;
 
 	key = 0;
 	for (i = 0; i < 64; i++)
-		if (p->pc[i] != NO_PC)
-			key ^= zob_piece[p->pc[i]][i];
-	key ^= zob_castle[p->c_flags];
-	if (p->ep_sq != NO_SQ)
-		key ^= zob_ep[File(p->ep_sq)];
-	if (p->side == BLACK)
+		if (pos->pc[i] != PIECE_NB)
+			key ^= zob_piece[pos->pc[i]][i];
+	key ^= zob_castle[pos->c_flags];
+	if (pos->ep_sq != NO_SQ)
+		key ^= zob_ep[File(pos->ep_sq)];
+	if (pos->side == BLACK)
 		key ^= SIDE_RANDOM;
 	return key;
 }
@@ -69,28 +69,28 @@ int PopCnt(U64 bb)
 	return (bb * k4) >> 56;
 }
 
-void MoveToStr(int move, char* move_str){
+void MoveToStr(int moves, char* move_str){
 	static const char prom_char[4] = "nbrq";
-	move_str[0] = File(Fsq(move)) + 'a';
-	move_str[1] = Rank(Fsq(move)) + '1';
-	move_str[2] = File(Tsq(move)) + 'a';
-	move_str[3] = Rank(Tsq(move)) + '1';
+	move_str[0] = File(Fsq(moves)) + 'a';
+	move_str[1] = Rank(Fsq(moves)) + '1';
+	move_str[2] = File(Tsq(moves)) + 'a';
+	move_str[3] = Rank(Tsq(moves)) + '1';
 	move_str[4] = '\0';
-	if (IsProm(move)) {
-		move_str[4] = prom_char[(move >> 12) & 3];
+	if (IsProm(moves)) {
+		move_str[4] = prom_char[(moves >> 12) & 3];
 		move_str[5] = '\0';
 	}
 }
 
-int StrToMove(Position* p, char* move_str) {
+int StrToMove(Position* pos, char* move_str) {
 	int from, to, type;
 	from = Sq(move_str[0] - 'a', move_str[1] - '1');
 	to = Sq(move_str[2] - 'a', move_str[3] - '1');
 	type = NORMAL;
-	if (TpOnSq(p, from) == K && Abs(to - from) == 2)
+	if (TpOnSq(pos, from) == K && Abs(to - from) == 2)
 		type = CASTLE;
-	else if (TpOnSq(p, from) == P) {
-		if (to == p->ep_sq)
+	else if (TpOnSq(pos, from) == P) {
+		if (to == pos->ep_sq)
 			type = EP_CAP;
 		else if (Abs(to - from) == 16)
 			type = EP_SET;
@@ -126,9 +126,9 @@ void PvToStr(int* pv, char* pv_str)
 	}
 }
 
-void BuildPv(int* dst, int* src, int move)
+void BuildPv(int* dst, int* src, int moves)
 {
-	*dst++ = move;
+	*dst++ = moves;
 	while ((*dst++ = *src++))
 		;
 }

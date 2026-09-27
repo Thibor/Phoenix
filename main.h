@@ -2,8 +2,8 @@
 #define MAIN_H
 
 enum {WHITE, BLACK, COLOR_NB};
-enum {P, N, B, R, Q, K, NO_TP};
-enum {WP, BP, WN, BN, WB, BB, WR, BR, WQ, BQ, WK, BK, NO_PC};
+enum {P, N, B, R, Q, K, PT_NB};
+enum {WP, BP, WN, BN, WB, BB, WR, BR, WQ, BQ, WK, BK, PIECE_NB};
 enum {FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H};
 enum {RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8};
 enum {NORMAL, CASTLE, EP_CAP, EP_SET, N_PROM, B_PROM, R_PROM, Q_PROM};
@@ -20,6 +20,8 @@ enum {
   NO_SQ
 };
 
+#define FALSE 0
+#define TRUE 1
 #define MAX_PLY         64
 #define MAX_MOVES       256
 #define INF             32767
@@ -53,7 +55,7 @@ enum {
 #define NAME		    "Phoenix"
 #define VERSION		    "2025-11-13"
 #define START_FEN       "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -"
-
+#define FLIP(sq)        ((sq)^56)
 #define SqBb(x)         ((U64)1 << (x))
 
 #define Cl(x)           ((x) & 1)
@@ -79,15 +81,15 @@ enum {
 
 #define Opp(x)          ((x) ^ 1)
 
-#define InCheck(p)      Attacked(p, KingSq(p, p->side), Opp(p->side))
-#define Illegal(p)      Attacked(p, KingSq(p, Opp(p->side)), p->side)
-#define MayNull(p)      (((p)->cl_bb[(p)->side] & ~((p)->tp_bb[P] | (p)->tp_bb[K])) != 0)
+#define InCheck(pos)      Attacked(pos, KingSq(pos, pos->side), Opp(pos->side))
+#define Illegal(pos)      Attacked(pos, KingSq(pos, Opp(pos->side)), pos->side)
+#define MayNull(pos)      (((pos)->cl_bb[(pos)->side] & ~((pos)->tp_bb[P] | (pos)->tp_bb[K])) != 0)
 
-#define PcBb(p, x, y)   ((p)->cl_bb[x] & (p)->tp_bb[y])
-#define OccBb(p)        ((p)->cl_bb[WHITE] | (p)->cl_bb[BLACK])
-#define UnoccBb(p)      (~OccBb(p))
-#define TpOnSq(p, x)    (Tp((p)->pc[x]))
-#define KingSq(p, x)    ((p)->king_sq[x])
+#define PcBb(pos, c, pt)   ((pos)->cl_bb[c] & (pos)->tp_bb[pt])
+#define OccBb(pos)        ((pos)->cl_bb[WHITE] | (pos)->cl_bb[BLACK])
+#define UnoccBb(pos)      (~OccBb(pos))
+#define TpOnSq(pos, x)    (Tp((pos)->pc[x]))
+#define KingSq(pos, x)    ((pos)->king_sq[x])
 
 #define RankIndex(o, x) (((o) >> ((070 & (x)) + 1)) & 63)
 #define FileIndex(o, x) (((FILE_A_BB & ((o) >> File(x))) * DIAG_B8H2_BB) >> 58)
@@ -113,7 +115,6 @@ typedef struct {
   int pc[64];
   int king_sq[2];
   int mat[2];
-  int pst[2];
   int side;
   int c_flags;
   int ep_sq;
@@ -124,14 +125,14 @@ typedef struct {
 } Position;
 
 typedef struct {
-  Position *p;
+  Position *pos;
   int phase;
   int trans_move;
   int killer1;
   int killer2;
   int *next;
   int *last;
-  int move[MAX_MOVES];
+  int moves[MAX_MOVES];
   int value[MAX_MOVES];
   int *badp;
   int bad[MAX_MOVES];
@@ -148,7 +149,7 @@ typedef struct {
 typedef struct {
   U64 key;
   short date;
-  short move;
+  short moves;
   short score;
   unsigned char flags;
   unsigned char depth;
@@ -187,12 +188,13 @@ int *GenerateQuiet(Position *, int *);
 U64 GetTimeMs(void);
 void Hist(Position *, int, int, int);
 void Init(void);
+void InitEval();
 void InitCaptures(Position *, MOVES *);
 void InitMoves(Position *, MOVES *, int, int);
 int InputAvailable(void);
 U64 Key(Position *);
 int Legal(Position *, int);
-int Mobility(Position *, int);
+int EvaluateMobility(Position *, int);
 void MoveToStr(int, char *);
 int MvvLva(Position *, int);
 int NextCapture(MOVES *);
@@ -229,7 +231,6 @@ extern U64 n_attacks[64];
 extern U64 k_attacks[64];
 extern U64 passed_mask[2][64];
 extern U64 adjacent_mask[8];
-extern int pst[6][64];
 extern int c_mask[64];
 extern const int bit_table[64];
 extern const int passed_bonus[2][8];

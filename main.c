@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include "main.h"
 
 U64 line_mask[4][64];
@@ -10,7 +11,6 @@ U64 n_attacks[64];
 U64 k_attacks[64];
 U64 passed_mask[2][64];
 U64 adjacent_mask[8];
-int pst[6][64];
 int c_mask[64];
 const int bit_table[64] = {
    0,  1,  2,  7,  3, 13,  8, 19,
@@ -135,15 +135,6 @@ void Init(void)
 		if (i < 7)
 			adjacent_mask[i] |= FILE_A_BB << (i + 1);
 	}
-	for (i = 0; i < 64; i++) {
-		j = line[File(i)] + line[Rank(i)];
-		pst[P][i] = j * 2;
-		pst[N][i] = j * 4;
-		pst[B][i] = j * 2;
-		pst[R][i] = line[File(i)];
-		pst[Q][i] = j;
-		pst[K][i] = j * 6;
-	}
 	for (i = 0; i < 64; i++)
 		c_mask[i] = 15;
 	c_mask[A1] = 13;
@@ -161,32 +152,32 @@ void Init(void)
 		zob_ep[i] = Random64();
 }
 
-int Swap(Position* p, int from, int to){
+int Swap (Position* pos, int from, int to){
 	int side, ply, type, score[32];
 	U64 attackers, occ, type_bb;
 
-	attackers = AttacksTo(p, to);
-	occ = OccBb(p);
-	score[0] = tp_value[TpOnSq(p, to)];
-	type = TpOnSq(p, from);
+	attackers = AttacksTo(pos, to);
+	occ = OccBb(pos);
+	score[0] = tp_value[TpOnSq(pos, to)];
+	type = TpOnSq(pos, from);
 	occ ^= SqBb(from);
-	attackers |= (BAttacks(occ, to) & (p->tp_bb[B] | p->tp_bb[Q])) |
-		(RAttacks(occ, to) & (p->tp_bb[R] | p->tp_bb[Q]));
+	attackers |= (BAttacks(occ, to) & (pos->tp_bb[B] | pos->tp_bb[Q])) |
+		(RAttacks(occ, to) & (pos->tp_bb[R] | pos->tp_bb[Q]));
 	attackers &= occ;
-	side = Opp(p->side);
+	side = Opp(pos->side);
 	ply = 1;
-	while (attackers & p->cl_bb[side]) {
+	while (attackers & pos->cl_bb[side]) {
 		if (type == K) {
 			score[ply++] = INF;
 			break;
 		}
 		score[ply] = -score[ply - 1] + tp_value[type];
 		for (type = P; type <= K; type++)
-			if ((type_bb = PcBb(p, side, type) & attackers))
+			if ((type_bb = PcBb(pos, side, type) & attackers))
 				break;
 		occ ^= type_bb & -type_bb;
-		attackers |= (BAttacks(occ, to) & (p->tp_bb[B] | p->tp_bb[Q])) |
-			(RAttacks(occ, to) & (p->tp_bb[R] | p->tp_bb[Q]));
+		attackers |= (BAttacks(occ, to) & (pos->tp_bb[B] | pos->tp_bb[Q])) |
+			(RAttacks(occ, to) & (pos->tp_bb[R] | pos->tp_bb[Q]));
 		attackers &= occ;
 		side ^= 1;
 		ply++;
@@ -213,7 +204,7 @@ char* ParseToken(char* string, char* token){
 	return string;
 }
 
-static void PrintBoard(Position* p) {
+static void PrintBoard(Position* pos) {
 	const char* s = "   +---+---+---+---+---+---+---+---+\n";
 	const char* t = "     A   B   C   D   E   F   G   H\n";
 	printf(t);
@@ -222,16 +213,17 @@ static void PrintBoard(Position* p) {
 		printf(" %d |", 8 - r);
 		for (int f = 0; f < 8; f++) {
 			int sq = Sq(f, 7 - r);
-			char c = "AaNnBbRrQqKk "[p->pc[sq]];
+			char c = "AaNnBbRrQqKk "[pos->pc[sq]];
 			printf(" %c |", c);
 		}
 		printf(" %d\n", 8 - r);
 	}
 	printf(s);
 	printf(t);
+	printf("score : %d\n",Evaluate(pos));
 }
 
-void PrintWelcome() {
+static void PrintWelcome() {
 	printf("%s %s\n", NAME, VERSION);
 }
 
@@ -299,66 +291,157 @@ void ParsePosition(Position* pos, char* ptr) {
 		}
 }
 
-void ParseGo(Position* pos, char* ptr) {
-	char token[80];
-	int movetime, movedepth, nodes;
-	info.stop = 0;
-	info.post = 1;
-	info.nodes = 0;
-	info.ponder = 0;
-	info.nodesLimit = 0;
+static void ResetInfo() {
+	info.timeStart = GetTimeMs();
 	info.timeLimit = 0;
 	info.depthLimit = MAX_PLY;
-	info.timeStart = GetTimeMs();
+	info.nodesLimit = 0;
+	info.nodes = 0;
+	info.ponder = FALSE;
+	info.stop = FALSE;
+	info.post = TRUE;
+}
+
+static int ShrinkNumber(U64 n) {
+	if (n < 10000)
+		return 0;
+	if (n < 10000000)
+		return 1;
+	if (n < 10000000000)
+		return 2;
+	return 3;
+}
+
+static void PrintSummary(U64 time, U64 nodes) {
+	U64 nps = (nodes * 1000) / max(time, 1);
+	const char* units[] = { "", "k", "m", "g" };
+	int sn = ShrinkNumber(nps);
+	int pos = pow(10, sn * 3);
+	int b = pow(10, 3);
+	printf("-----------------------------\n");
+	printf("Time        : %llu\n", time);
+	printf("Nodes       : %llu\n", nodes);
+	printf("Nps         : %llu (%llu%s/s)\n", nps, nps / pos, units[sn]);
+	printf("-----------------------------\n");
+}
+
+static void PrintPerformanceHeader() {
+	printf("-----------------------------\n");
+	printf("ply      time        nodes\n");
+	printf("-----------------------------\n");
+}
+
+static inline void PerftDriver(Position* pos, int depth) {
+	UNDO u;
+	int moves[256];
+	int* next = GenerateCaptures(pos, moves);
+	int* last = GenerateQuiet(pos, moves + (next - moves));
+	next = moves;
+	while (next < last) {
+		DoMove(pos, *next, &u);
+		if (!Illegal(pos))
+			if (depth)
+				PerftDriver(pos, depth - 1);
+			else
+				info.nodes++;
+		UndoMove(pos, *next, &u);
+		next++;
+	}
+}
+
+static inline void PerftDriver4(Position* pos, int depth) {
+	UNDO u;
+	int moves[256];
+	int* next = moves;
+	GenerateCaptures(pos, moves);
+	int* last = GenerateQuiet(pos, moves);
+	while (next < last){
+		DoMove(pos, *next, &u);
+		if (!Illegal(pos)) {
+			if (depth)
+				PerftDriver(pos, depth - 1);
+			else
+				info.nodes++;
+		}
+		UndoMove(pos, *next, &u);
+		next++;
+	}
+}
+
+static inline void PerftDriver2(Position* pos, int depth) {
+	int moves[256];
+	const int num_moves = MoveGen(pos, moves, 0);
+	for (int n = 0; n < num_moves; n++) {
+		Position npos = *pos;
+		if (!MakeMove(&npos, &moves[n]))
+			continue;
+		if (depth)
+			PerftDriver(&npos, depth - 1);
+		else
+			info.nodes++;
+	}
+}
+
+//start benchmark
+static void UciBench(Position* pos) {
+	ResetInfo();
+	PrintPerformanceHeader();
+	info.depthLimit = 0;
+	info.post = FALSE;
+	U64 elapsed = 0;
+	while (elapsed < 3000) {
+		++info.depthLimit;
+		SearchRoot(pos);
+		elapsed = GetTimeMs() - info.timeStart;
+		printf(" %2d. %8llu %12llu\n", info.depthLimit, elapsed, info.nodes);
+	}
+	PrintSummary(elapsed, info.nodes);
+}
+
+//performance test
+static void UciPerformance(Position* pos) {
+	ResetInfo();
+	PrintPerformanceHeader();
+	info.depthLimit = 0;
+	U64 elapsed = 0;
+	while (elapsed < 3000) {
+		PerftDriver(pos, info.depthLimit++);
+		elapsed = GetTimeMs() - info.timeStart;
+		printf(" %2d. %8llu %12llu\n", info.depthLimit, elapsed, info.nodes);
+	}
+	PrintSummary(elapsed, info.nodes);
+}
+
+static void ParseGo(Position* pos, char* command) {
+	ResetInfo();
 	int wtime = 0;
 	int btime = 0;
 	int winc = 0;
 	int binc = 0;
 	int movestogo = 32;
-	for (;;) {
-		ptr = ParseToken(ptr, token);
-		if (*token == '\0')
-			break;
-		if (strcmp(token, "ponder") == 0) {
-			info.ponder = 1;
-		}
-		else if (strcmp(token, "wtime") == 0) {
-			ptr = ParseToken(ptr, token);
-			wtime = atoi(token);
-		}
-		else if (strcmp(token, "btime") == 0) {
-			ptr = ParseToken(ptr, token);
-			btime = atoi(token);
-		}
-		else if (strcmp(token, "winc") == 0) {
-			ptr = ParseToken(ptr, token);
-			winc = atoi(token);
-		}
-		else if (strcmp(token, "binc") == 0) {
-			ptr = ParseToken(ptr, token);
-			binc = atoi(token);
-		}
-		else if (strcmp(token, "movestogo") == 0) {
-			ptr = ParseToken(ptr, token);
-			movestogo = atoi(token);
-		}
-		else if (strcmp(token, "movetime") == 0) {
-			ptr = ParseToken(ptr, token);
-			info.timeLimit = atoi(token);
-		}
-		else if (strcmp(token, "depth") == 0) {
-			ptr = ParseToken(ptr, token);
-			info.depthLimit = atoi(token);
-		}
-		else if (strcmp(token, "nodes") == 0) {
-			ptr = ParseToken(ptr, token);
-			info.nodesLimit = atoi(token);
-		}
-	}
-	int time = pos->side==WHITE ? wtime : btime;
-	int inc = pos->side==WHITE ? winc : binc;
+	char* argument = NULL;
+	if (strstr(command, "ponder"))
+		info.ponder = TRUE;
+	if (argument = strstr(command, "binc"))
+		binc = atoi(argument + 5);
+	if (argument = strstr(command, "winc"))
+		winc = atoi(argument + 5);
+	if (argument = strstr(command, "wtime"))
+		wtime = max(1, atoi(argument + 6));
+	if (argument = strstr(command, "btime"))
+		btime = max(1, atoi(argument + 6));
+	if (argument = strstr(command, "movestogo"))
+		movestogo = atoi(argument + 10);
+	if (argument = strstr(command, "movetime"))
+		info.timeLimit = atoi(argument + 9);
+	if (argument = strstr(command, "depth"))
+		info.depthLimit = atoi(argument + 6);
+	if (argument = strstr(command, "nodes"))
+		info.nodesLimit = atoi(argument + 5);
+	int time = pos->side == WHITE ? wtime : btime;
+	int inc = pos->side == WHITE ? winc : binc;
 	if (time)
-		info.timeLimit = min(time / movestogo + inc, time / 2);
+		info.timeLimit = max(1, min(time / movestogo + inc, time / 2));
 	SearchRoot(pos);
 }
 
@@ -374,6 +457,8 @@ void UciCommand(Position* pos, char* command) {
 	else if (strncmp(command, "position", 8) == 0)ParsePosition(pos, command);
 	else if (strncmp(command, "go", 2) == 0)ParseGo(pos, command);
 	else if (strncmp(command, "print", 5) == 0)PrintBoard(pos);
+	else if (strncmp(command, "perft", 5)==0)UciPerformance(pos);
+	else if (strncmp(command, "bench", 5) == 0)UciBench(pos);
 	else if (strncmp(command, "quit", 4) == 0)exit(0);
 	else if (strncmp(command, "stop",4) == 0)info.stop = 1;
 	else if (strncmp(command, "ponderhit",9) == 0)info.ponder = 0;
@@ -388,6 +473,7 @@ void UciCommand(Position* pos, char* command) {
 }
 
 void UciLoop(Position* pos) {
+	//UciCommand(pos, "perft");
 	char line[4000];
 	while (fgets(line, sizeof(line), stdin))
 		UciCommand(pos,line);
@@ -401,6 +487,7 @@ int main() {
 	AllocTrans(hash_def);
 	PrintWelcome();
 	Init();
+	InitEval();
 	UciLoop(&pos);
 	return 0;
 }
